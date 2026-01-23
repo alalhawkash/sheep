@@ -60,6 +60,12 @@ const statusFromDays = (days: number): AlertStatus => {
   return 'later'
 }
 
+const nextEstrusDate = (lastEstrus: string | undefined, cycleDays: number) => {
+  if (!lastEstrus) return null
+  const next = addDays(lastEstrus, cycleDays)
+  return next
+}
+
 const statusLabel = (status: AlertStatus, days: number) => {
   if (status === 'overdue') return `متأخر بـ ${Math.abs(days)} يوم`
   if (status === 'today') return 'اليوم'
@@ -261,10 +267,17 @@ function App() {
     herd: animals.filter((a) => a.pen === id),
   }))
 
-  const animalRows = animals.map((a) => ({
-    ...a,
-    age: ageInDays(a.birthDate),
-  }))
+  const animalRows = animals.map((a) => {
+    const age = ageInDays(a.birthDate)
+    const estrusDate = a.bredStatus === 'غير ملقحة' ? nextEstrusDate(a.lastEstrusDate, breedingSeason.cycleDays) : null
+    const estrusDays = estrusDate ? daysUntil(estrusDate) : null
+    return {
+      ...a,
+      age,
+      nextEstrus: estrusDate,
+      nextEstrusDays: estrusDays,
+    }
+  })
 
   const season = breedingSeason
   const inSeason = isDateInRange(season.currentStart, season.currentEnd)
@@ -369,7 +382,11 @@ function App() {
                 <th>الحظيرة</th>
                 <th>الغرض</th>
                 <th>الحالة</th>
+                <th>ملقحة؟</th>
+                <th>شبق متوقع</th>
                 <th>الوزن</th>
+                <th>الأم</th>
+                <th>الأب</th>
                 <th>ولادة متوقعة</th>
               </tr>
             </thead>
@@ -384,7 +401,23 @@ function App() {
                   <td>
                     <span className={`badge ${a.status === 'سليم' ? 'success' : 'warn'}`}>{a.status}</span>
                   </td>
+                  <td>
+                    <span className={`badge ${a.bredStatus === 'ملقحة' ? 'success' : 'warn'}`}>
+                      {a.bredStatus ?? 'غير ملقحة'}
+                    </span>
+                  </td>
+                  <td>
+                    {a.nextEstrus ? (
+                      <span className={`badge ${a.nextEstrusDays !== null && a.nextEstrusDays <= 3 ? 'error' : 'warn'}`}>
+                        {formatDate(a.nextEstrus)} {a.nextEstrusDays !== null ? `(${a.nextEstrusDays} يوم)` : ''}
+                      </span>
+                    ) : (
+                      '-'
+                    )}
+                  </td>
                   <td>{a.weightKg ? `${a.weightKg} كجم` : '-'}</td>
+                  <td>{a.motherTag ?? '-'}</td>
+                  <td>{a.fatherTag ?? '-'}</td>
                   <td>{a.expectedDueDate ? formatDate(a.expectedDueDate) : '-'}</td>
                 </tr>
               ))}

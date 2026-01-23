@@ -26,6 +26,9 @@ export interface Animal {
   weightKg?: number
   expectedDueDate?: string
   motherTag?: string
+  fatherTag?: string
+  bredStatus?: 'ملقحة' | 'غير ملقحة'
+  lastEstrusDate?: string
 }
 
 export interface Vaccination {
@@ -80,6 +83,8 @@ export const animals: Animal[] = [
     status: 'سليم',
     purpose: 'قطيع',
     weightKg: 62,
+    bredStatus: 'غير ملقحة',
+    lastEstrusDate: '2026-01-05',
   },
   {
     id: 'a2',
@@ -91,6 +96,9 @@ export const animals: Animal[] = [
     expectedDueDate: '2026-02-05',
     purpose: 'قطيع',
     weightKg: 58,
+    bredStatus: 'ملقحة',
+    fatherTag: 'F-991',
+    lastEstrusDate: '2025-12-01',
   },
   {
     id: 'a3',
@@ -102,6 +110,9 @@ export const animals: Animal[] = [
     expectedDueDate: '2026-01-28',
     purpose: 'قطيع',
     weightKg: 55,
+    bredStatus: 'ملقحة',
+    fatherTag: 'F-991',
+    lastEstrusDate: '2025-12-10',
   },
   {
     id: 'a4',
@@ -113,6 +124,8 @@ export const animals: Animal[] = [
     motherTag: 'E-889',
     purpose: 'مواليد',
     weightKg: 18,
+    fatherTag: 'F-991',
+    bredStatus: 'غير ملقحة',
   },
   {
     id: 'a5',
@@ -124,6 +137,8 @@ export const animals: Animal[] = [
     motherTag: 'E-780',
     purpose: 'لحم',
     weightKg: 21,
+    fatherTag: 'F-991',
+    bredStatus: 'غير ملقحة',
   },
   {
     id: 'a6',
@@ -134,6 +149,7 @@ export const animals: Animal[] = [
     status: 'سليم',
     purpose: 'لحم',
     weightKg: 34,
+    bredStatus: 'غير ملقحة',
   },
   {
     id: 'a7',
@@ -144,6 +160,7 @@ export const animals: Animal[] = [
     status: 'سليم',
     purpose: 'لحم',
     weightKg: 64,
+    bredStatus: 'غير ملقحة',
   },
   {
     id: 'a8',
@@ -154,6 +171,7 @@ export const animals: Animal[] = [
     status: 'سليم',
     purpose: 'فحل',
     weightKg: 72,
+    bredStatus: 'غير ملقحة',
   },
   {
     id: 'a9',
@@ -164,6 +182,8 @@ export const animals: Animal[] = [
     status: 'مريض',
     purpose: 'قطيع',
     weightKg: 49,
+    bredStatus: 'غير ملقحة',
+    lastEstrusDate: '2025-12-28',
   },
   {
     id: 'a10',
@@ -174,6 +194,8 @@ export const animals: Animal[] = [
     status: 'سليم',
     purpose: 'قطيع',
     weightKg: 36,
+    bredStatus: 'غير ملقحة',
+    lastEstrusDate: '2026-01-02',
   },
 ]
 
