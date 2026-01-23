@@ -19,19 +19,20 @@
     .success { background:#b4f2c2; color:#0b1220; }
     .warn { background:#ffe1a8; color:#0b1220; }
     .error { background:#ffc9c9; color:#0b1220; }
+    .btn { padding:10px 14px; border-radius:10px; border:1px solid #2a3856; background:#1b2644; color:#e8edf7; cursor:pointer; font-weight:700; }
+    .btn:hover { background:#24335c; }
   </style>
 </head>
 <body>
   <h1>عرض الحظائر والقطيع من Excel (Standalone)</h1>
 
   <div class="panel">
-    <div>اختر ملف Excel يحوي Sheets باسم <b>pens</b> و <b>animals</b></div>
-    <div class="hint">تنسيق الأعمدة المتوقعة مذكور أدناه</div>
-    <div className="input-row">
-      <label for="excel">ملف Excel</label>
-      <input id="excel" type="file" accept=".xlsx,.xls" />
+    <div>يقرأ تلقائياً من ملف <b>sample-data.xlsx</b> الموجود في نفس المجلد.</div>
+    <div class="hint">أي تعديل على الملف سينعكس عند التحديث اليدوي أو كل دقيقة تلقائياً.</div>
+    <div class="input-row">
+      <button id="refresh-btn" class="btn">تحديث الآن</button>
     </div>
-    <div class="hint" id="status">بانتظار اختيار الملف...</div>
+    <div class="hint" id="status">بانتظار التحميل...</div>
   </div>
 
   <div class="panel">
@@ -64,6 +65,9 @@
   </div>
 
 <script>
+const DATA_URL = 'sample-data.xlsx'
+const POLL_MS = 60000
+
 const dayMs = 1000*60*60*24;
 const asDate = v => new Date(v + 'T00:00:00');
 const ageInDays = d => Math.floor((Date.now() - asDate(d).getTime())/dayMs);
@@ -75,6 +79,7 @@ const byId = (id) => document.getElementById(id);
 const pensBody = byId('pens-table').querySelector('tbody');
 const animalsBody = byId('animals-table').querySelector('tbody');
 const statusEl = byId('status');
+const refreshBtn = byId('refresh-btn');
 
 const normalizePens = rows => rows.map(p => ({
   id: String(p.id||'').trim(),
@@ -135,12 +140,12 @@ function render(pens, animals) {
   }).join('');
 }
 
-byId('excel').addEventListener('change', async (e) => {
-  const file = e.target.files?.[0];
-  if (!file) return;
-  statusEl.textContent = 'جارٍ قراءة الملف ...';
+async function loadExcel(trigger='تحميل تلقائي') {
+  statusEl.textContent = `${trigger} من ${DATA_URL} ...`;
   try {
-    const data = await file.arrayBuffer();
+    const resp = await fetch(`${DATA_URL}?t=${Date.now()}`, { cache: 'no-cache' });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.arrayBuffer();
     const wb = XLSX.read(data);
     const pensSheet = wb.Sheets['pens'] || wb.Sheets['PENS'] || wb.Sheets['حظائر'];
     const animalsSheet = wb.Sheets['animals'] || wb.Sheets['ANIMALS'] || wb.Sheets['قطيع'];
@@ -151,17 +156,17 @@ byId('excel').addEventListener('change', async (e) => {
     const pens = pensSheet ? normalizePens(XLSX.utils.sheet_to_json(pensSheet)) : [];
     const animals = animalsSheet ? normalizeAnimals(XLSX.utils.sheet_to_json(animalsSheet)) : [];
     render(pens, animals);
-    statusEl.textContent = 'تم التحميل من Excel';
+    statusEl.textContent = 'تم التحديث من sample-data.xlsx';
   } catch (err) {
-    statusEl.textContent = 'فشل قراءة الملف - تأكد من التنسيق';
+    statusEl.textContent = 'فشل قراءة sample-data.xlsx - تأكد من وجوده وصيغة الأعمدة';
   }
-});
+}
 
-// بيانات افتراضية بسيطة للعرض الأولي
-render(
-  [{ id:'main', name:'حظيرة القطيع الرئيسي', capacity:50, note:'مثال' }],
-  [{ id:'demo1', tag:'E-501', gender:'أنثى', birthDate:'2024-03-10', pen:'main', status:'سليم', purpose:'قطيع', bredStatus:'غير ملقحة', lastEstrusDate:'2026-01-05' }]
-);
+refreshBtn.addEventListener('click', () => loadExcel('تحديث يدوي'));
+
+// تحميل تلقائي عند الفتح + تحديث كل دقيقة
+loadExcel('تحميل تلقائي');
+setInterval(() => loadExcel('تحديث تلقائي'), POLL_MS);
 </script>
 </body>
 </html>
