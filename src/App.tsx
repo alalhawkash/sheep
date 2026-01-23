@@ -1,16 +1,11 @@
 import './index.css'
 import './App.css'
-import { useEffect, useMemo, useState } from 'react'
+import { read, utils } from 'xlsx'
+import { useMemo, useState } from 'react'
 import { animals as sampleAnimals, breedingSeason, pens as samplePens, type Animal, type Pen, type PenId } from './data/sample'
 
-declare global {
-  interface Window {
-    google?: any
-    gapi?: any
-  }
-}
-
 const dayMs = 1000 * 60 * 60 * 24
+
 const asDate = (value: string) => new Date(value + 'T00:00:00')
 const ageInDays = (date: string) => Math.floor((Date.now() - asDate(date).getTime()) / dayMs)
 const daysUntil = (date: string) => Math.floor((asDate(date).getTime() - Date.now()) / dayMs)
@@ -30,10 +25,39 @@ const occupancyTone = (percent: number) => {
   if (percent >= 75) return 'warn'
   return 'ok'
 }
+const labelForPen = (penId: PenId, pensList: Pen[]) => pensList.find((p) => p.id === penId)?.name ?? penId
 
-const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.readonly'
-const FALLBACK_CLIENT_ID = '377565604559-94ejku2bdvu6lp9m8jqtsdcn9nnr2fjk.apps.googleusercontent.com'
-const CLIENT_ID = (import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined) ?? FALLBACK_CLIENT_ID
+const normalizePens = (list: any[]): Pen[] =>
+  list
+    .map((p) => ({
+      id: String(p.id || '').trim() as PenId,
+      name: String(p.name || '').trim() || 'حظيرة',
+      capacity: Number(p.capacity || 0) || 0,
+      note: p.note ? String(p.note) : undefined,
+    }))
+    .filter((p) => p.id)
+
+const normalizeAnimals = (list: any[]): Animal[] =>
+  list
+    .map((a) => ({
+      id: String(a.id || '').trim(),
+      tag: String(a.tag || '').trim(),
+      gender: (a.gender === 'ذكر' || a.gender === 'أنثى' ? a.gender : 'أنثى') as Animal['gender'],
+      birthDate: String(a.birthDate || '').trim(),
+      pen: String(a.pen || '').trim() as PenId,
+      status: (a.status === 'مريض' ? 'مريض' : 'سليم') as Animal['status'],
+      purpose: ((): Animal['purpose'] => {
+        if (a.purpose === 'لحم' || a.purpose === 'فحل' || a.purpose === 'مواليد') return a.purpose
+        return 'قطيع'
+      })(),
+      weightKg: a.weightKg ? Number(a.weightKg) : undefined,
+      expectedDueDate: a.expectedDueDate ? String(a.expectedDueDate) : undefined,
+      motherTag: a.motherTag ? String(a.motherTag) : undefined,
+      fatherTag: a.fatherTag ? String(a.fatherTag) : undefined,
+      bredStatus: (a.bredStatus === 'ملقحة' ? 'ملقحة' : 'غير ملقحة') as Animal['bredStatus'],
+      lastEstrusDate: a.lastEstrusDate ? String(a.lastEstrusDate) : undefined,
+    }))
+    .filter((a) => a.id && a.tag && a.birthDate && a.pen)
 
 const PenCard = ({ pen, herd }: { pen: Pen; herd: Animal[] }) => {
   const occupancy = Math.round((herd.length / pen.capacity) * 100)
@@ -66,11 +90,7 @@ const PenCard = ({ pen, herd }: { pen: Pen; herd: Animal[] }) => {
 function App() {
   const [herd, setHerd] = useState<Animal[]>(sampleAnimals)
   const [penList, setPenList] = useState<Pen[]>(samplePens)
-  const [fileId, setFileId] = useState<string>('')
-  const [accessToken, setAccessToken] = useState<string | null>(null)
-  const [authStatus, setAuthStatus] = useState<string>('لم يتم تسجيل الدخول')
-  const [driveStatus, setDriveStatus] = useState<string>('لم يتم التحميل')
-  const [loadingDrive, setLoadingDrive] = useState(false)
+  const [excelStatus, setExcelStatus] = useState<string>('البيانات المعروضة من العينة الافتراضية')
 
   const penStats = useMemo(
     () =>
@@ -98,106 +118,37 @@ function App() {
     [herd],
   )
 
-  const labelForPen = (penId: PenId) => penList.find((p) => p.id === penId)?.name ?? penId
-
-  const waitForGapi = () =>
-    new Promise<void>((resolve, reject) => {
-      const start = Date.now()
-      const tryLoad = () => {
-        if (window.gapi?.load) {
-          window.gapi.load('client', {
-            callback: () => resolve(),
-            onerror: () => reject(new Error('gapi load error')),
-          })
-          return
-        }
-        if (Date.now() - start > 10000) {
-          reject(new Error('gapi not available'))
-          return
-        }
-        setTimeout(tryLoad, 50)
-      }
-      tryLoad()
-    })
-
-  const handleSignIn = async () => {
-    if (!CLIENT_ID) {
-      setAuthStatus('الرجاء ضبط VITE_GOOGLE_CLIENT_ID')
-      return
-    }
-    setAuthStatus('جارٍ تسجيل الدخول...')
+  const handleExcel = async (file: File) => {
     try {
-      await waitForGapi()
-      const client = window.google?.accounts?.oauth2?.initTokenClient?.({
-        client_id: CLIENT_ID,
-        scope: DRIVE_SCOPE,
-        callback: (resp: any) => {
-          if (resp.error) {
-            setAuthStatus('فشل تسجيل الدخول')
-            return
-          }
-          setAccessToken(resp.access_token)
-          setAuthStatus('تم تسجيل الدخول')
-        },
-      })
-      if (!client) {
-        setAuthStatus('Google client غير متاح')
+      setExcelStatus('جارٍ قراءة الملف ...')
+      const buffer = await file.arrayBuffer()
+      const workbook = read(buffer)
+      const getSheet = (...names: string[]) => {
+        for (const name of names) {
+          const sheet = workbook.Sheets[name]
+          if (sheet) return sheet
+        }
+        return undefined
+      }
+
+      const pensSheet = getSheet('pens', 'PENS', 'حظائر')
+      const animalsSheet = getSheet('animals', 'ANIMALS', 'قطيع')
+
+      const nextPens = pensSheet ? normalizePens(utils.sheet_to_json(pensSheet)) : penList
+      const nextAnimals = animalsSheet ? normalizeAnimals(utils.sheet_to_json(animalsSheet)) : herd
+
+      if (!pensSheet && !animalsSheet) {
+        setExcelStatus('لم يتم العثور على Sheets باسم pens أو animals')
         return
       }
-      client.requestAccessToken({ prompt: 'consent' })
+
+      setPenList(nextPens.length ? nextPens : penList)
+      setHerd(nextAnimals.length ? nextAnimals : herd)
+      setExcelStatus('تم التحديث من ملف Excel')
     } catch (err) {
-      setAuthStatus('تعذر تحميل gapi/تسجيل الدخول')
+      setExcelStatus('فشل قراءة الملف - تأكد من التنسيق')
     }
   }
-
-  const handleSignOut = () => {
-    if (accessToken && window.google?.accounts?.oauth2?.revoke) {
-      window.google.accounts.oauth2.revoke(accessToken, () => {})
-    }
-    setAccessToken(null)
-    setAuthStatus('تم تسجيل الخروج')
-  }
-
-  const handleFetchDrive = async () => {
-    if (!accessToken) {
-      setDriveStatus('سجّل الدخول أولاً')
-      return
-    }
-    if (!fileId) {
-      setDriveStatus('أدخل File ID من Google Drive')
-      return
-    }
-    setLoadingDrive(true)
-    setDriveStatus('جارٍ التحميل من Drive...')
-    try {
-      const resp = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      })
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`)
-      const json = await resp.json()
-      if (Array.isArray(json.pens) && Array.isArray(json.animals)) {
-        setPenList(json.pens)
-        setHerd(json.animals)
-        setDriveStatus('تم التحديث من Drive')
-      } else {
-        setDriveStatus('تنسيق غير متوقع: يحتاج { pens: [], animals: [] }')
-      }
-    } catch (err) {
-      setDriveStatus('فشل التحميل من Drive')
-    } finally {
-      setLoadingDrive(false)
-    }
-  }
-
-  useEffect(() => {
-    if (!CLIENT_ID) {
-      setAuthStatus('ضبط VITE_GOOGLE_CLIENT_ID مفقود')
-    }
-    // warm hint if scripts missing
-    if (!window.google || !window.gapi) {
-      // pass
-    }
-  }, [])
 
   return (
     <div className="app-shell">
@@ -210,35 +161,24 @@ function App() {
 
       <div className="panel">
         <div className="panel-head">
-          <h3>ربط Google Drive</h3>
-          <span className="hint">قراءة ملف JSON فيه pens + animals</span>
-        </div>
-        <div className="actions" style={{ marginBottom: 10 }}>
-          <button className="btn" onClick={handleSignIn}>
-            تسجيل دخول
-          </button>
-          <button className="btn secondary" onClick={handleSignOut}>
-            تسجيل خروج
-          </button>
-          <button className="btn" onClick={handleFetchDrive} disabled={loadingDrive}>
-            {loadingDrive ? '...جارٍ التحميل' : 'تحميل البيانات'}
-          </button>
+          <h3>تحميل من Excel</h3>
+          <span className="hint">ملف يحوي Sheets باسم pens و animals</span>
         </div>
         <div className="input-row">
-          <label htmlFor="fileId">File ID</label>
+          <label htmlFor="excel-upload">اختر ملف Excel</label>
           <input
-            id="fileId"
+            id="excel-upload"
+            type="file"
+            accept=".xlsx,.xls"
             className="input"
-            placeholder="مثال: 1AbCdEfGhIj..."
-            value={fileId}
-            onChange={(e) => setFileId(e.target.value)}
+            onChange={(e) => {
+              const file = e.target.files?.[0]
+              if (file) handleExcel(file)
+            }}
           />
         </div>
         <div className="hint-row">
-          <span className="meta">حالة الدخول: {authStatus}</span>
-        </div>
-        <div className="hint-row">
-          <span className="meta">حالة التحميل: {driveStatus}</span>
+          <span className="meta">{excelStatus}</span>
         </div>
       </div>
 
@@ -283,7 +223,7 @@ function App() {
                   <td>{a.tag}</td>
                   <td>{a.gender}</td>
                   <td>{a.age}</td>
-                  <td>{labelForPen(a.pen)}</td>
+                  <td>{labelForPen(a.pen, penList)}</td>
                   <td>{a.purpose}</td>
                   <td>
                     <span className={`badge ${a.status === 'سليم' ? 'success' : 'warn'}`}>{a.status}</span>
