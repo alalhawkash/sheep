@@ -1,13 +1,167 @@
 <!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>sheep</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>عرض الحظائر والقطيع من Excel (Standalone)</title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    body { font-family: 'Cairo', 'Inter', sans-serif; background:#0b1220; color:#e8edf7; margin:0; padding:20px; }
+    h1 { margin:0 0 12px 0; }
+    .panel { background:rgba(17,24,43,0.9); border:1px solid rgba(48,70,110,0.55); border-radius:14px; padding:14px; margin-bottom:12px; }
+    .hint { color:#9fb1d0; font-size:13px; }
+    .input-row { display:flex; flex-direction:column; gap:6px; margin:10px 0; }
+    .input-row input { padding:10px; border-radius:10px; border:1px solid #2a3856; background:#0f172a; color:#e8edf7; }
+    table { width:100%; border-collapse:collapse; margin-top:10px; }
+    th, td { padding:8px; border-bottom:1px solid rgba(255,255,255,0.08); text-align:right; font-size:13px; }
+    th { color:#9fb1d0; }
+    .badge { display:inline-block; padding:4px 8px; border-radius:10px; font-size:12px; font-weight:700; }
+    .success { background:#b4f2c2; color:#0b1220; }
+    .warn { background:#ffe1a8; color:#0b1220; }
+    .error { background:#ffc9c9; color:#0b1220; }
+  </style>
+</head>
+<body>
+  <h1>عرض الحظائر والقطيع من Excel (Standalone)</h1>
+
+  <div class="panel">
+    <div>اختر ملف Excel يحوي Sheets باسم <b>pens</b> و <b>animals</b></div>
+    <div class="hint">تنسيق الأعمدة المتوقعة مذكور أدناه</div>
+    <div className="input-row">
+      <label for="excel">ملف Excel</label>
+      <input id="excel" type="file" accept=".xlsx,.xls" />
+    </div>
+    <div class="hint" id="status">بانتظار اختيار الملف...</div>
+  </div>
+
+  <div class="panel">
+    <h3>الحظائر</h3>
+    <table id="pens-table">
+      <thead><tr><th>الاسم</th><th>المعرف</th><th>السعة</th><th>ملاحظة</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <h3>القطيع</h3>
+    <table id="animals-table">
+      <thead>
+        <tr>
+          <th>الرمز</th><th>الجنس</th><th>العمر (يوم)</th><th>الحظيرة</th><th>الغرض</th>
+          <th>الحالة</th><th>ملقحة؟</th><th>شبق متوقع</th><th>الوزن</th><th>الأم</th><th>الأب</th><th>ولادة متوقعة</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <h3>تنسيق الأعمدة</h3>
+    <div class="hint">
+      Sheet <b>pens</b>: id, name, capacity, (اختياري note).<br />
+      Sheet <b>animals</b>: id, tag, gender (ذكر/أنثى), birthDate (YYYY-MM-DD), pen (id), status (سليم/مريض), purpose (قطيع/لحم/فحل/مواليد). اختياري: weightKg, expectedDueDate, motherTag, fatherTag, bredStatus (ملقحة/غير ملقحة), lastEstrusDate.
+    </div>
+  </div>
+
+<script>
+const dayMs = 1000*60*60*24;
+const asDate = v => new Date(v + 'T00:00:00');
+const ageInDays = d => Math.floor((Date.now() - asDate(d).getTime())/dayMs);
+const daysUntil = d => Math.floor((asDate(d).getTime() - Date.now())/dayMs);
+const addDays = (d, delta) => { const x=asDate(d); x.setDate(x.getDate()+delta); return x.toISOString().slice(0,10); };
+const nextEstrusDate = (last, cycle=17) => last ? addDays(last, cycle) : null;
+
+const byId = (id) => document.getElementById(id);
+const pensBody = byId('pens-table').querySelector('tbody');
+const animalsBody = byId('animals-table').querySelector('tbody');
+const statusEl = byId('status');
+
+const normalizePens = rows => rows.map(p => ({
+  id: String(p.id||'').trim(),
+  name: String(p.name||'').trim() || 'حظيرة',
+  capacity: Number(p.capacity||0)||0,
+  note: p.note ? String(p.note) : ''
+})).filter(p => p.id);
+
+const normalizeAnimals = rows => rows.map(a => ({
+  id: String(a.id||'').trim(),
+  tag: String(a.tag||'').trim(),
+  gender: (a.gender==='ذكر' || a.gender==='أنثى') ? a.gender : 'أنثى',
+  birthDate: String(a.birthDate||'').trim(),
+  pen: String(a.pen||'').trim(),
+  status: a.status==='مريض' ? 'مريض' : 'سليم',
+  purpose: (['لحم','فحل','مواليد','قطيع'].includes(a.purpose)) ? a.purpose : 'قطيع',
+  weightKg: a.weightKg ? Number(a.weightKg) : null,
+  expectedDueDate: a.expectedDueDate ? String(a.expectedDueDate) : '',
+  motherTag: a.motherTag ? String(a.motherTag) : '',
+  fatherTag: a.fatherTag ? String(a.fatherTag) : '',
+  bredStatus: a.bredStatus==='ملقحة' ? 'ملقحة' : 'غير ملقحة',
+  lastEstrusDate: a.lastEstrusDate ? String(a.lastEstrusDate) : ''
+})).filter(a => a.id && a.tag && a.birthDate && a.pen);
+
+function render(pens, animals) {
+  pensBody.innerHTML = pens.map(p => `
+    <tr>
+      <td>${p.name}</td>
+      <td>${p.id}</td>
+      <td>${p.capacity}</td>
+      <td>${p.note||''}</td>
+    </tr>
+  `).join('');
+
+  animalsBody.innerHTML = animals.map(a => {
+    const age = ageInDays(a.birthDate);
+    const estrus = a.bredStatus==='غير ملقحة' ? nextEstrusDate(a.lastEstrusDate, 17) : null;
+    const estrusDays = estrus ? daysUntil(estrus) : null;
+    const statusBadge = `<span class="badge ${a.status==='سليم'?'success':'warn'}">${a.status}</span>`;
+    const bredBadge = `<span class="badge ${a.bredStatus==='ملقحة'?'success':'warn'}">${a.bredStatus}</span>`;
+    const estrusBadge = estrus ? `<span class="badge ${estrusDays!==null && estrusDays<=3 ? 'error':'warn'}">${estrus} (${estrusDays} يوم)</span>` : '-';
+    return `
+      <tr>
+        <td>${a.tag}</td>
+        <td>${a.gender}</td>
+        <td>${age}</td>
+        <td>${a.pen}</td>
+        <td>${a.purpose}</td>
+        <td>${statusBadge}</td>
+        <td>${bredBadge}</td>
+        <td>${estrusBadge}</td>
+        <td>${a.weightKg ? a.weightKg + ' كجم' : '-'}</td>
+        <td>${a.motherTag||'-'}</td>
+        <td>${a.fatherTag||'-'}</td>
+        <td>${a.expectedDueDate||'-'}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+byId('excel').addEventListener('change', async (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  statusEl.textContent = 'جارٍ قراءة الملف ...';
+  try {
+    const data = await file.arrayBuffer();
+    const wb = XLSX.read(data);
+    const pensSheet = wb.Sheets['pens'] || wb.Sheets['PENS'] || wb.Sheets['حظائر'];
+    const animalsSheet = wb.Sheets['animals'] || wb.Sheets['ANIMALS'] || wb.Sheets['قطيع'];
+    if (!pensSheet && !animalsSheet) {
+      statusEl.textContent = 'لم يتم العثور على Sheets باسم pens أو animals';
+      return;
+    }
+    const pens = pensSheet ? normalizePens(XLSX.utils.sheet_to_json(pensSheet)) : [];
+    const animals = animalsSheet ? normalizeAnimals(XLSX.utils.sheet_to_json(animalsSheet)) : [];
+    render(pens, animals);
+    statusEl.textContent = 'تم التحميل من Excel';
+  } catch (err) {
+    statusEl.textContent = 'فشل قراءة الملف - تأكد من التنسيق';
+  }
+});
+
+// بيانات افتراضية بسيطة للعرض الأولي
+render(
+  [{ id:'main', name:'حظيرة القطيع الرئيسي', capacity:50, note:'مثال' }],
+  [{ id:'demo1', tag:'E-501', gender:'أنثى', birthDate:'2024-03-10', pen:'main', status:'سليم', purpose:'قطيع', bredStatus:'غير ملقحة', lastEstrusDate:'2026-01-05' }]
+);
+</script>
+</body>
 </html>
