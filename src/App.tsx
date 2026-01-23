@@ -261,6 +261,11 @@ function App() {
     herd: animals.filter((a) => a.pen === id),
   }))
 
+  const animalRows = animals.map((a) => ({
+    ...a,
+    age: ageInDays(a.birthDate),
+  }))
+
   const season = breedingSeason
   const inSeason = isDateInRange(season.currentStart, season.currentEnd)
   const daysToStart = daysUntil(season.currentStart)
@@ -346,6 +351,45 @@ function App() {
           ) : (
             movementAlerts.map((alert) => <AlertItem alert={alert} key={alert.id} />)
           )}
+        </div>
+      </div>
+
+      <div className="panel" style={{ marginTop: 12 }}>
+        <div className="panel-head">
+          <h3>بيانات القطيع (الخانة المخصصة)</h3>
+          <span className="hint">رموز، أعمار، حظائر، أغراض، حالات صحية</span>
+        </div>
+        <div className="table-wrap">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>الرمز</th>
+                <th>الجنس</th>
+                <th>العمر (يوم)</th>
+                <th>الحظيرة</th>
+                <th>الغرض</th>
+                <th>الحالة</th>
+                <th>الوزن</th>
+                <th>ولادة متوقعة</th>
+              </tr>
+            </thead>
+            <tbody>
+              {animalRows.map((a) => (
+                <tr key={a.id}>
+                  <td>{a.tag}</td>
+                  <td>{a.gender}</td>
+                  <td>{a.age}</td>
+                  <td>{labelForPen(a.pen)}</td>
+                  <td>{a.purpose}</td>
+                  <td>
+                    <span className={`badge ${a.status === 'سليم' ? 'success' : 'warn'}`}>{a.status}</span>
+                  </td>
+                  <td>{a.weightKg ? `${a.weightKg} كجم` : '-'}</td>
+                  <td>{a.expectedDueDate ? formatDate(a.expectedDueDate) : '-'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
 
