@@ -2,6 +2,7 @@ import './index.css'
 import './App.css'
 import {
   animals,
+  breedingSeason,
   cleaningTasks,
   feedPlans,
   pens,
@@ -123,6 +124,11 @@ const occupancyTone = (percent: number) => {
   if (percent >= 90) return 'danger'
   if (percent >= 75) return 'warn'
   return 'ok'
+}
+
+const isDateInRange = (start: string, end: string) => {
+  const now = Date.now()
+  return now >= asDate(start).getTime() && now <= asDate(end).getTime()
 }
 
 const PenCard = ({ pen, herd }: { pen: Pen; herd: Animal[] }) => {
@@ -255,6 +261,19 @@ function App() {
     herd: animals.filter((a) => a.pen === id),
   }))
 
+  const season = breedingSeason
+  const inSeason = isDateInRange(season.currentStart, season.currentEnd)
+  const daysToStart = daysUntil(season.currentStart)
+  const daysToEnd = daysUntil(season.currentEnd)
+  const daysToNextStart = daysUntil(season.nextStart)
+  const seasonStatus = inSeason ? 'داخل الموسم' : daysToStart >= 0 ? 'قبل الموسم' : 'خارج الموسم'
+  const seasonTone: 'neutral' | 'success' | 'warn' = inSeason ? 'success' : daysToStart <= 30 && daysToStart >= 0 ? 'warn' : 'neutral'
+  const seasonCountdown = inSeason
+    ? `متبقي ${Math.max(0, daysToEnd)} يوم`
+    : daysToStart >= 0
+      ? `يبدأ بعد ${daysToStart} يوم`
+      : `الموسم القادم بعد ${daysToNextStart} يوم`
+
   return (
     <div className="app-shell">
       <header className="topbar">
@@ -273,6 +292,35 @@ function App() {
         <StatCard label="جاهز للنقل اليوم" value={`${readyToday}`} meta="تنبيهات فورية" tone="success" />
         <StatCard label="حركات متأخرة" value={`${overdueMoves}`} meta="الأولوية الأولى" tone="error" />
         <StatCard label="تطعيمات قريبة" value={`${upcomingVacc}`} meta="خلال 7 أيام" tone="warn" />
+      </div>
+
+      <div className="panel" style={{ marginTop: 12 }}>
+        <div className="panel-head">
+          <h3>موسم الخصوبة (القطيع الرئيسي)</h3>
+          <span className="hint">دورة الشبق للنجدي: {season.cycleDays} يوم</span>
+        </div>
+        <div className="grid stats-grid" style={{ marginBottom: 12 }}>
+          <StatCard label="الحالة" value={seasonStatus} meta={seasonCountdown} tone={seasonTone} />
+          <StatCard
+            label={inSeason ? 'ينتهي في' : 'يبدأ في'}
+            value={formatDate(inSeason ? season.currentEnd : season.currentStart)}
+            meta={inSeason ? `إلى ${formatDate(season.currentEnd)}` : `موعد البداية: ${formatDate(season.currentStart)}`}
+          />
+          <StatCard
+            label="الموسم القادم"
+            value={formatDate(season.nextStart)}
+            meta={`ينتهي ${formatDate(season.nextEnd)}`}
+          />
+        </div>
+        <div className="list">
+          {season.notes.map((note, idx) => (
+            <div className="pill" key={idx}>
+              <div className="row">
+                <span>{note}</span>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       <div className="panel" style={{ marginTop: 12 }}>

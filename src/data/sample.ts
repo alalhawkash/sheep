@@ -50,6 +50,15 @@ export interface FeedPlan {
   notes?: string
 }
 
+export interface BreedingSeason {
+  currentStart: string // ISO
+  currentEnd: string // ISO
+  nextStart: string // ISO
+  nextEnd: string // ISO
+  cycleDays: number
+  notes: string[]
+}
+
 export const pens: Pen[] = [
   { id: 'main', name: 'حظيرة القطيع الرئيسي', capacity: 50, note: 'يشمل 50 رأس + معالف وماء' },
   { id: 'latePregnancy', name: 'حظيرة الحمل المتأخر', capacity: 15 },
@@ -186,4 +195,17 @@ export const feedPlans: FeedPlan[] = [
   { id: 'f3', penId: 'weaning', ration: 'بادي فطام + علف خشن', notes: '3 وجبات خفيفة' },
   { id: 'f4', penId: 'fattening', ration: 'مركز طاقة عالي + مياه عذبة', notes: '3 وجبات' },
 ]
+
+export const breedingSeason: BreedingSeason = {
+  currentStart: '2025-08-15',
+  currentEnd: '2026-02-15',
+  nextStart: '2026-08-10',
+  nextEnd: '2027-02-10',
+  cycleDays: 17, // متوسط دورة الشبق للنجدي
+  notes: [
+    'تركز الرصد كل 12 ساعة أثناء الموسم',
+    'تسجيل كل شبق/تزاوج لإدارة القطيع الرئيسي',
+    'جاهزية الفحول (تغذية، حوافر، لقاحات) قبل بداية الموسم',
+  ],
+}
 
