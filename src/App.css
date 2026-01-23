@@ -325,6 +325,31 @@
   overflow-x: auto;
 }
 
+.input-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.input-row label {
+  color: #b9c4dd;
+  font-size: 12px;
+}
+
+.input {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #2f3d5f;
+  background: #0f172a;
+  color: #e8edf7;
+  font-size: 14px;
+}
+
+.input:focus {
+  outline: 2px solid #4f8bff;
+}
+
 .table th,
 .table td {
   padding: 10px 8px;
