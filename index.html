@@ -77,12 +77,7 @@
   </div>
 
   <div class="panel">
-    <div>يقرأ تلقائياً من ملف <b>sample-data.xlsx</b> الموجود في نفس المجلد.</div>
-    <div class="hint">أي تعديل على الملف سينعكس عند التحديث اليدوي أو كل دقيقة تلقائياً.</div>
-    <div class="input-row">
-      <button id="refresh-btn" class="btn">تحديث الآن</button>
-    </div>
-    <div class="hint" id="status">بانتظار التحميل...</div>
+    <div class="hint" id="status">يتم التحميل تلقائياً من sample-data.xlsx كل 60 ثانية.</div>
   </div>
 
   <div class="panel">
@@ -129,7 +124,6 @@ const byId = (id) => document.getElementById(id);
 const pensBody = byId('pens-table').querySelector('tbody');
 const animalsBody = byId('animals-table').querySelector('tbody');
 const statusEl = byId('status');
-const refreshBtn = byId('refresh-btn');
 
 const normalizePens = rows => rows.map(p => ({
   id: String(p.id||'').trim(),
@@ -191,7 +185,7 @@ function render(pens, animals) {
 }
 
 async function loadExcel(trigger='تحميل تلقائي') {
-  statusEl.textContent = `${trigger} من ${DATA_URL} ...`;
+  if (statusEl) statusEl.textContent = `${trigger} من ${DATA_URL} ...`;
   try {
     const resp = await fetch(`${DATA_URL}?t=${Date.now()}`, { cache: 'no-cache' });
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
@@ -206,13 +200,11 @@ async function loadExcel(trigger='تحميل تلقائي') {
     const pens = pensSheet ? normalizePens(XLSX.utils.sheet_to_json(pensSheet)) : [];
     const animals = animalsSheet ? normalizeAnimals(XLSX.utils.sheet_to_json(animalsSheet)) : [];
     render(pens, animals);
-    statusEl.textContent = 'تم التحديث من sample-data.xlsx';
+    if (statusEl) statusEl.textContent = 'تم التحديث من sample-data.xlsx';
   } catch (err) {
-    statusEl.textContent = 'فشل قراءة sample-data.xlsx - تأكد من وجوده وصيغة الأعمدة';
+    if (statusEl) statusEl.textContent = 'فشل قراءة sample-data.xlsx - تأكد من وجوده وصيغة الأعمدة';
   }
 }
-
-refreshBtn.addEventListener('click', () => loadExcel('تحديث يدوي'));
 
 // تحميل تلقائي عند الفتح + تحديث كل دقيقة
 loadExcel('تحميل تلقائي');
