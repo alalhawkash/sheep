@@ -24,6 +24,16 @@
     .swatch { width:16px; height:16px; border-radius:4px; border:1px solid rgba(0,0,0,0.2); }
     .map-box { background:#0f172a; border:1px solid #2a3856; border-radius:12px; padding:8px; }
     svg { max-width:100%; height:auto; }
+    .card-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; }
+    .card { padding:12px; border-radius:12px; border:1px solid rgba(255,255,255,0.08); background:#0f172a; box-shadow:0 10px 30px rgba(0,0,0,0.25); }
+    .card-title { font-weight:700; margin-bottom:4px; }
+    .card-meta { color:#9fb1d0; font-size:12px; margin-bottom:6px; }
+    .card-value { font-size:20px; font-weight:800; }
+    .form-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:10px; }
+    .form-row { display:flex; flex-direction:column; gap:4px; }
+    .form-row label { font-size:13px; color:#9fb1d0; }
+    .form-row input, .form-row select, .form-row textarea { padding:10px; border-radius:10px; border:1px solid #2a3856; background:#0f172a; color:#e8edf7; font-family:inherit; }
+    .pill-info { margin-top:8px; color:#9fb1d0; font-size:13px; }
   </style>
 </head>
 <body>
@@ -31,45 +41,123 @@
 
   <div class="panel">
     <div class="panel-head">
-      <h3>Pen Layout (schematic)</h3>
-      <span class="hint">Colors follow the provided sketch</span>
+      <h3>Register New Tag</h3>
+      <span class="hint">Age, Teeth stage, and Feeding plan are auto-calculated</span>
     </div>
-    <div class="svg-panel">
-      <div class="map-box">
-        <svg viewBox="0 0 900 420">
-          <rect x="40" y="20" width="820" height="380" fill="none" stroke="#b8c1d9" stroke-width="3"/>
-          <!-- Main pen -->
-          <rect x="240" y="60" width="420" height="140" fill="#b4c9a0" opacity="0.85" stroke="#0b1220"/>
-          <!-- Warm -->
-          <rect x="520" y="220" width="220" height="140" fill="#c7c9d9" opacity="0.9" stroke="#0b1220"/>
-          <!-- Newborn 3 days -->
-          <rect x="480" y="220" width="40" height="140" fill="#d44f53" opacity="0.9" stroke="#0b1220"/>
-          <!-- 2-month lambs -->
-          <rect x="380" y="220" width="100" height="140" fill="#365b9c" opacity="0.9" stroke="#0b1220"/>
-          <!-- Weaned lambs -->
-          <rect x="300" y="220" width="80" height="140" fill="#d9b48a" opacity="0.9" stroke="#0b1220"/>
-          <!-- Weaned sheep -->
-          <rect x="180" y="220" width="120" height="140" fill="#c7873e" opacity="0.9" stroke="#0b1220"/>
-          <!-- Rams -->
-          <rect x="340" y="60" width="80" height="140" fill="#c481a8" opacity="0.9" stroke="#0b1220"/>
-          <!-- Lambs -->
-          <rect x="260" y="60" width="80" height="140" fill="#5687b6" opacity="0.9" stroke="#0b1220"/>
-          <!-- Clinic -->
-          <rect x="60" y="200" width="50" height="70" fill="#52c45b" opacity="0.95" stroke="#0b1220"/>
-          <!-- Service aisle -->
-          <line x1="40" y1="200" x2="860" y2="200" stroke="#6b7280" stroke-dasharray="6 6" stroke-width="2"/>
-        </svg>
+    <form id="new-tag-form">
+      <div class="form-grid">
+        <div class="form-row">
+          <label for="tagId">Tag ID</label>
+          <input id="tagId" name="tagId" required />
+        </div>
+        <div class="form-row">
+          <label for="sex">Sex</label>
+          <select id="sex" name="sex" required>
+            <option value="">Select</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label for="birthDate">Birth Date</label>
+          <input id="birthDate" name="birthDate" type="date" required />
+        </div>
+        <div class="form-row">
+          <label for="status">Status</label>
+          <select id="status" name="status" required>
+            <option value="">Select</option>
+            <option value="healthy">Healthy</option>
+            <option value="sick">Sick</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label for="pen">Pen</label>
+          <select id="pen" name="pen" required>
+            <option value="">Select</option>
+            <option value="main">Main pen</option>
+            <option value="pregnant pen">Pregnant pen</option>
+            <option value="newborn 3 days">Newborn 3 days</option>
+            <option value="2-month lambs">2-month lambs</option>
+            <option value="weaned lambs">Weaned lambs</option>
+            <option value="weaned sheep">Weaned sheep</option>
+            <option value="ewe lambs">Ewe lambs</option>
+            <option value="ram lambs">Ram lambs</option>
+            <option value="clinic">Clinic</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label for="penStart">Pen Start Date</label>
+          <input id="penStart" name="penStart" type="date" required />
+        </div>
+        <div class="form-row">
+          <label>Age (auto)</label>
+          <input id="ageDisplay" readonly placeholder="Auto" />
+        </div>
+        <div class="form-row">
+          <label>Teeth stage (auto)</label>
+          <input id="teethDisplay" readonly placeholder="Auto" />
+        </div>
       </div>
-      <div class="legend">
-        <div class="swatch" style="background:#b4c9a0"></div><div>Main pen</div><div>60</div>
-        <div class="swatch" style="background:#c7c9d9"></div><div>Warm</div><div>30</div>
-        <div class="swatch" style="background:#d44f53"></div><div>Newborn 3 days</div><div>5</div>
-        <div class="swatch" style="background:#365b9c"></div><div>2-month lambs</div><div>15</div>
-        <div class="swatch" style="background:#d9b48a"></div><div>Weaned lambs</div><div>30</div>
-        <div class="swatch" style="background:#c7873e"></div><div>Weaned sheep</div><div>40</div>
-        <div class="swatch" style="background:#c481a8"></div><div>Rams</div><div>20</div>
-        <div class="swatch" style="background:#5687b6"></div><div>Lambs</div><div>20</div>
-        <div class="swatch" style="background:#52c45b"></div><div>Clinic</div><div>2</div>
+      <div class="form-row">
+        <label>Feeding plan (auto)</label>
+        <textarea id="feedPlanDisplay" rows="3" readonly placeholder="Auto"></textarea>
+      </div>
+      <div class="form-row" style="margin-top:10px;">
+        <button type="submit" class="btn">Save (local only)</button>
+      </div>
+      <div class="pill-info" id="formStatus">Not saved to server; local only.</div>
+    </form>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Pen Layout</h3>
+    </div>
+    <div class="card-grid">
+      <div class="card" style="background:#0f172a; border-left:4px solid #b4c9a0">
+        <div class="card-title">Main pen</div>
+        <div class="card-meta">Capacity: 60</div>
+        <div class="card-value">0</div>
+      </div>
+      <div class="card" style="background:#0f172a; border-left:4px solid #c7c9d9">
+        <div class="card-title">Pregnant pen</div>
+        <div class="card-meta">Capacity: 30</div>
+        <div class="card-value">0</div>
+      </div>
+      <div class="card" style="background:#0f172a; border-left:4px solid #d44f53">
+        <div class="card-title">Newborn 3 days</div>
+        <div class="card-meta">Capacity: 5</div>
+        <div class="card-value">0</div>
+      </div>
+      <div class="card" style="background:#0f172a; border-left:4px solid #365b9c">
+        <div class="card-title">2-month lambs</div>
+        <div class="card-meta">Capacity: 15</div>
+        <div class="card-value">0</div>
+      </div>
+      <div class="card" style="background:#0f172a; border-left:4px solid #d9b48a">
+        <div class="card-title">Weaned lambs</div>
+        <div class="card-meta">Capacity: 30</div>
+        <div class="card-value">0</div>
+      </div>
+      <div class="card" style="background:#0f172a; border-left:4px solid #c7873e">
+        <div class="card-title">Weaned sheep</div>
+        <div class="card-meta">Capacity: 40</div>
+        <div class="card-value">0</div>
+      </div>
+      <div class="card" style="background:#0f172a; border-left:4px solid #c481a8">
+        <div class="card-title">Ewe lambs</div>
+        <div class="card-meta">Capacity: 20</div>
+        <div class="card-value">0</div>
+      </div>
+      <div class="card" style="background:#0f172a; border-left:4px solid #5687b6">
+        <div class="card-title">Ram lambs</div>
+        <div class="card-meta">Capacity: 20</div>
+        <div class="card-value">0</div>
+      </div>
+      <div class="card" style="background:#0f172a; border-left:4px solid #52c45b">
+        <div class="card-title">Clinic</div>
+        <div class="card-meta">Capacity: 2</div>
+        <div class="card-value">0</div>
       </div>
     </div>
   </div>
@@ -91,8 +179,8 @@
     <table id="animals-table">
       <thead>
         <tr>
-          <th>Tag</th><th>Gender</th><th>Age (days)</th><th>Pen</th><th>Purpose</th>
-          <th>Health</th><th>Bred?</th><th>Next estrus</th><th>Weight</th><th>Dam</th><th>Sire</th><th>Due date</th>
+          <th>Tag</th><th>Gender</th><th>Age (days)</th><th>Teeth stage</th><th>Pen</th>
+          <th>Health</th><th>Feeding plan</th><th>Bred?</th><th>Next estrus</th><th>Weight</th><th>Dam</th><th>Sire</th><th>Due date</th>
         </tr>
       </thead>
       <tbody></tbody>
@@ -108,7 +196,7 @@
   </div>
 
 <script>
-const DATA_URL = 'sample-data.xlsx'
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQo98aiq6d4nxtH0x2TimIyVeJ45iKxTXRnuXJQSSqcpIjlsX17EE3VLrru5DIyOI_OHCAXZLIPiTXx/pub?gid=0&single=true&output=csv'
 const POLL_MS = 60000
 
 const dayMs = 1000*60*60*24;
@@ -117,34 +205,39 @@ const ageInDays = d => Math.floor((Date.now() - asDate(d).getTime())/dayMs);
 const daysUntil = d => Math.floor((asDate(d).getTime() - Date.now())/dayMs);
 const addDays = (d, delta) => { const x=asDate(d); x.setDate(x.getDate()+delta); return x.toISOString().slice(0,10); };
 const nextEstrusDate = (last, cycle=17) => last ? addDays(last, cycle) : null;
+const ageToYears = d => ageInDays(d) / 365;
+const penKey = (penVal='') => {
+  const v = penVal.trim().toLowerCase();
+  if (!v) return 'main';
+  if (v.includes('pregnant') || v.includes('حامل')) return 'pregnant pen';
+  if (v.includes('newborn')) return 'newborn 3 days';
+  if (v.includes('شهرين') || v.includes('2-month')) return '2-month lambs';
+  if (v.includes('فطام') && v.includes('بهم')) return 'weaned lambs';
+  if (v.includes('فطام') && v.includes('ضأن')) return 'weaned sheep';
+  if (v.includes('ewe') || v.includes('انثى فطام') || v.includes('رخلة')) return 'ewe lambs';
+  if (v.includes('ram') || v.includes('ذكر فطام') || v.includes('طلي')) return 'ram lambs';
+  if (v.includes('clinic') || v.includes('عيادة') || v.includes('عزل')) return 'clinic';
+  if (v.includes('main') || v.includes('جلد') || v.includes('الرئيسي')) return 'main';
+  return penVal; // fallback
+};
 
 const byId = (id) => document.getElementById(id);
 const pensBody = byId('pens-table').querySelector('tbody');
 const animalsBody = byId('animals-table').querySelector('tbody');
 const statusEl = byId('status');
+const form = byId('new-tag-form');
+const ageDisplay = byId('ageDisplay');
+const teethDisplay = byId('teethDisplay');
+const feedPlanDisplay = byId('feedPlanDisplay');
+const formStatus = byId('formStatus');
+const tagIdEl = byId('tagId');
+const sexEl = byId('sex');
+const birthDateEl = byId('birthDate');
+const statusSelectEl = byId('status');
+const penEl = byId('pen');
+const penStartEl = byId('penStart');
 
-const normalizePens = rows => rows.map(p => ({
-  id: String(p.id||'').trim(),
-  name: String(p.name||'').trim() || 'حظيرة',
-  capacity: Number(p.capacity||0)||0,
-  note: p.note ? String(p.note) : ''
-})).filter(p => p.id);
-
-const normalizeAnimals = rows => rows.map(a => ({
-  id: String(a.id||'').trim(),
-  tag: String(a.tag||'').trim(),
-  gender: (a.gender==='ذكر' || a.gender==='أنثى') ? a.gender : 'أنثى',
-  birthDate: String(a.birthDate||'').trim(),
-  pen: String(a.pen||'').trim(),
-  status: a.status==='مريض' ? 'مريض' : 'سليم',
-  purpose: (['لحم','فحل','مواليد','قطيع'].includes(a.purpose)) ? a.purpose : 'قطيع',
-  weightKg: a.weightKg ? Number(a.weightKg) : null,
-  expectedDueDate: a.expectedDueDate ? String(a.expectedDueDate) : '',
-  motherTag: a.motherTag ? String(a.motherTag) : '',
-  fatherTag: a.fatherTag ? String(a.fatherTag) : '',
-  bredStatus: a.bredStatus==='ملقحة' ? 'ملقحة' : 'غير ملقحة',
-  lastEstrusDate: a.lastEstrusDate ? String(a.lastEstrusDate) : ''
-})).filter(a => a.id && a.tag && a.birthDate && a.pen);
+// (CSV-driven now; keep helpers simple)
 
 function render(pens, animals) {
   pensBody.innerHTML = pens.map(p => `
@@ -158,22 +251,27 @@ function render(pens, animals) {
 
   animalsBody.innerHTML = animals.map(a => {
     const age = ageInDays(a.birthDate);
+    const ageYears = age / 365;
+    const teeth = teethStage(ageYears, a.gender);
+    const penKeyVal = penKey(a.pen);
+    const feed = feedingPlans[penKeyVal] || '';
     const estrus = a.bredStatus==='غير ملقحة' ? nextEstrusDate(a.lastEstrusDate, 17) : null;
     const estrusDays = estrus ? daysUntil(estrus) : null;
-    const statusBadge = `<span class="badge ${a.status==='سليم'?'success':'warn'}">${a.status}</span>`;
-    const bredBadge = `<span class="badge ${a.bredStatus==='ملقحة'?'success':'warn'}">${a.bredStatus}</span>`;
-    const estrusBadge = estrus ? `<span class="badge ${estrusDays!==null && estrusDays<=3 ? 'error':'warn'}">${estrus} (${estrusDays} يوم)</span>` : '-';
+    const statusBadge = `<span class="badge ${a.status==='سليم'?'success':'warn'}">${a.status==='سليم'?'healthy':'sick'}</span>`;
+    const bredBadge = `<span class="badge ${a.bredStatus==='ملقحة'?'success':'warn'}">${a.bredStatus==='ملقحة'?'bred':'not bred'}</span>`;
+    const estrusBadge = estrus ? `<span class="badge ${estrusDays!==null && estrusDays<=3 ? 'error':'warn'}">${estrus} (${estrusDays} d)</span>` : '-';
     return `
       <tr>
         <td>${a.tag}</td>
-        <td>${a.gender}</td>
+        <td>${a.gender === 'male' ? 'male' : 'female'}</td>
         <td>${age}</td>
+        <td>${teeth}</td>
         <td>${a.pen}</td>
-        <td>${a.purpose}</td>
         <td>${statusBadge}</td>
+        <td>${feed || '-'}</td>
         <td>${bredBadge}</td>
         <td>${estrusBadge}</td>
-        <td>${a.weightKg ? a.weightKg + ' كجم' : '-'}</td>
+        <td>${a.weightKg ? a.weightKg + ' kg' : '-'}</td>
         <td>${a.motherTag||'-'}</td>
         <td>${a.fatherTag||'-'}</td>
         <td>${a.expectedDueDate||'-'}</td>
@@ -182,31 +280,151 @@ function render(pens, animals) {
   }).join('');
 }
 
+const teethStage = (ageYears, sex) => {
+  if (ageYears < 1) return sex === 'male' ? 'Lamb (<1y)' : 'Ewe lamb (<1y)';
+  if (ageYears < 2) return 'Thani (1-2y)';
+  if (ageYears < 3) return 'Ruba (2-3y)';
+  if (ageYears < 4) return 'Sudus (3-4y)';
+  if (ageYears < 5) return 'Jami (4-5y)';
+  return 'Hamisa (5+y)';
+};
+
+const feedingPlans = {
+  'main': 'Maintenance: Roughage 1.0 kg/head/day + Concentrate 200 g/head/day',
+  'pregnant pen': 'Pregnant (by stage): Roughage ≥1.0 kg + Concentrate 200/250/350/600/700/0 g (early/mid/late/last month/last 2 wks/last 48h)',
+  'newborn 3 days': 'Day 1–3 postpartum: Roughage 1.0–1.5 kg + Concentrate Single: 400–1000 g / Twins: 600–1200 g (increases day 1→3)',
+  '2-month lambs': 'Weaning plan: Soft roughage ad lib + Lamb concentrate 300–800 g/head/day (week 6→9 increasing)',
+  'weaned lambs': 'Post-weaning: Roughage 1.0–1.5 kg + Concentrate (ewe lambs 600–1100 g / ram lambs 800–2000 g)',
+  'weaned sheep': 'Maintenance: Roughage 1.0–1.5 kg + Concentrate 200–400 g/head/day',
+  'ewe lambs': 'Post-weaning females: Roughage 1.0–1.5 kg + Concentrate 600–800 g (first 2 wks) → 700–1100 g',
+  'ram lambs': 'Post-weaning males: Roughage 1.0–1.5 kg + Concentrate 800–1000 g (first 2 wks) → 1200–1500 g → 1600–2000 g',
+  'clinic': 'Clinic/Isolation: vet-directed plan',
+};
+
+function updateComputedFields() {
+  const birth = birthDateEl.value;
+  const sex = sexEl.value;
+  const pen = (penEl.value || '').toLowerCase();
+  const ageYears = birth ? ageToYears(birth) : null;
+  if (ageYears !== null) {
+    ageDisplay.value = `${Math.floor(ageYears)} y / ${ageInDays(birth)} days`;
+    teethDisplay.value = teethStage(ageYears, sex || 'male');
+  } else {
+    ageDisplay.value = '';
+    teethDisplay.value = '';
+  }
+  feedPlanDisplay.value = feedingPlans[penKey(pen)] || '';
+}
+
+function appendAnimalRow(animal) {
+  const age = ageInDays(animal.birthDate);
+  const ageYears = age / 365;
+  const teeth = teethStage(ageYears, animal.gender);
+  const penKeyVal = penKey(animal.pen || '');
+  const feed = feedingPlans[penKeyVal] || '';
+  const row = document.createElement('tr');
+  row.innerHTML = `
+    <td>${animal.tag}</td>
+    <td>${animal.gender === 'male' ? 'male' : 'female'}</td>
+    <td>${age}</td>
+    <td>${teeth}</td>
+    <td>${animal.pen}</td>
+    <td><span class="badge ${animal.status === 'healthy' ? 'success' : 'warn'}">${animal.status === 'healthy' ? 'healthy' : 'sick'}</span></td>
+    <td>${feed || '-'}</td>
+    <td>-</td>
+    <td>-</td>
+    <td>${animal.weightKg ? animal.weightKg + ' kg' : '-'}</td>
+    <td>${animal.motherTag || '-'}</td>
+    <td>${animal.fatherTag || '-'}</td>
+    <td>${animal.expectedDueDate || '-'}</td>
+  `;
+  animalsBody.prepend(row);
+}
+
 async function loadExcel(trigger='auto load') {
-  if (statusEl) statusEl.textContent = `${trigger} from ${DATA_URL} ...`;
+  if (statusEl) statusEl.textContent = `${trigger} from Google Sheet CSV ...`;
   try {
-    const resp = await fetch(`${DATA_URL}?t=${Date.now()}`, { cache: 'no-cache' });
+    const resp = await fetch(`${CSV_URL}&t=${Date.now()}`, { cache: 'no-cache' });
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const data = await resp.arrayBuffer();
-    const wb = XLSX.read(data);
-    const pensSheet = wb.Sheets['pens'] || wb.Sheets['PENS'] || wb.Sheets['حظائر'];
-    const animalsSheet = wb.Sheets['animals'] || wb.Sheets['ANIMALS'] || wb.Sheets['قطيع'];
-    if (!pensSheet && !animalsSheet) {
-      statusEl.textContent = 'Sheets named pens / animals not found';
-      return;
-    }
-    const pens = pensSheet ? normalizePens(XLSX.utils.sheet_to_json(pensSheet)) : [];
-    const animals = animalsSheet ? normalizeAnimals(XLSX.utils.sheet_to_json(animalsSheet)) : [];
+    const text = await resp.text();
+    const rows = text.split(/\r?\n/).filter(Boolean).map(line => line.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/).map(v => v.replace(/^"|"$/g,'')));
+    if (!rows.length) throw new Error('Empty CSV');
+    const header = rows.shift().map(h => h.trim());
+    const animals = rows.map(cols => {
+      const get = key => cols[header.indexOf(key)] || '';
+      const sexVal = get('Sex');
+      const statusVal = get('Status');
+      const birth = get('BirthDate');
+      const penVal = get('Pen') || 'main';
+      const tag = get('TagID') || get('tag') || '';
+      return {
+        id: tag || `row-${Math.random()}`,
+        tag,
+        gender: (sexVal === 'ذكر' || sexVal === 'male') ? 'male' : 'female',
+        birthDate: birth,
+        pen: penVal,
+        status: (statusVal === 'مريض' || statusVal === 'sick') ? 'مريض' : 'سليم',
+        purpose: 'herd',
+        weightKg: null,
+        expectedDueDate: '',
+        motherTag: '',
+        fatherTag: '',
+        bredStatus: 'غير ملقحة',
+        lastEstrusDate: '',
+      }
+    }).filter(a => a.tag && a.birthDate);
+    // Derive pen list with zeroed capacity (unknown)
+    const penIds = Array.from(new Set(animals.map(a => a.pen)));
+    const pens = penIds.map(id => ({ id, name: id, capacity: 0, note: '' }));
     render(pens, animals);
-    if (statusEl) statusEl.textContent = 'Updated from sample-data.xlsx';
+    if (statusEl) statusEl.textContent = 'Updated from Google Sheet CSV';
   } catch (err) {
-    if (statusEl) statusEl.textContent = 'Failed to read sample-data.xlsx - check file and schema';
+    if (statusEl) statusEl.textContent = 'Failed to read Google Sheet CSV - check sharing/publish';
   }
 }
 
 // تحميل تلقائي عند الفتح + تحديث كل دقيقة
 loadExcel('Auto load');
 setInterval(() => loadExcel('Auto refresh'), POLL_MS);
+
+['input','change'].forEach(evt => {
+  birthDateEl.addEventListener(evt, updateComputedFields);
+  sexEl.addEventListener(evt, updateComputedFields);
+  penEl.addEventListener(evt, updateComputedFields);
+});
+
+if (form) {
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const tag = tagIdEl.value.trim();
+    const sex = sexEl.value;
+    const birth = birthDateEl.value;
+    const statusVal = statusSelectEl.value;
+    const penVal = penEl.value;
+    const penStart = penStartEl.value;
+    if (!tag || !sex || !birth || !statusVal || !penVal || !penStart) {
+      formStatus.textContent = 'Please fill all required fields.';
+      return;
+    }
+    const animal = {
+      id: `local-${Date.now()}`,
+      tag,
+      gender: sex,
+      birthDate: birth,
+      pen: penVal,
+      status: statusVal === 'healthy' ? 'سليم' : 'مريض',
+      purpose: 'herd',
+    };
+    appendAnimalRow(animal);
+    formStatus.textContent = 'Saved locally (not persisted).';
+    form.reset();
+    ageDisplay.value = '';
+    teethDisplay.value = '';
+    feedPlanDisplay.value = '';
+  });
+}
+
+updateComputedFields();
 </script>
 </body>
 </html>
